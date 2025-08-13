@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+- Every component file must start with either `use client` or `use server` as appropriate.
+- Adopt React Server Components and SSR (App Router) where possible; limit "use client" to UI interactions.
+- Never use `any` unless unavoidable; prefer strong and explicit types.
+- Use semantic HTML tags when possible.
+- Always adhere to Eslint and Prettier rules.

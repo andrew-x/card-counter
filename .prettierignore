@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+
+# Production builds
+.next
+dist
+build
+
+# Environment files
+.env*
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Cache
+.cache
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+
+# Package files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated files
+*.min.js
+*.min.css

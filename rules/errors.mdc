@@ -1,0 +1,10 @@
+---
+description: when handling errors or async actions like API calls, or network requests, or server actions
+alwaysApply: false
+---
+
+- All async data fetching must include Suspense and fallback loading UI.
+- Log errors to console and display user-friendly error messages.
+- Never silently ignore errors.
+- Include loading and error states for all async data fetching.
+- When building pages and components, use suspense and skeletons for loading states.

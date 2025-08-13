@@ -1,0 +1,10 @@
+---
+description: when applying styles
+alwaysApply: false
+---
+
+- Use Tailwind utility classes for layout and design, Mantine UI for complex components.
+- Prefer mobile-first responsive design.
+- For Mantine: theme overrides and customization should live in `/styles/mantine-theme.ts` or similar.
+- Do not mix custom CSS and Tailwind unless necessary.
+- When using both Mantine and Tailwind together, prefer Mantine for base components and Tailwind for additional layout refinement.

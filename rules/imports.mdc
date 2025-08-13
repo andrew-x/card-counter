@@ -1,0 +1,7 @@
+---
+description: when importing or creating new files, components, etc.
+alwaysApply: false
+---
+
+- Use absolute imports (e.g., `@/components/my-component`) rather than relative paths.
+- Use kebab-case for files and directories (e.g., `my-component.tsx`), PascalCase for React component names.

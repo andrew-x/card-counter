@@ -1,0 +1,81 @@
+@import 'tailwindcss';
+
+:root {
+  --background: theme(colors.slate.50);
+  --foreground: theme(colors.slate.900);
+  --primary: theme(colors.blue.500);
+  --primary-light: theme(colors.blue.100);
+  --secondary: theme(colors.emerald.500);
+  --secondary-light: theme(colors.emerald.100);
+  --accent: theme(colors.amber.400);
+  --accent-light: theme(colors.amber.50);
+  --muted: theme(colors.slate.100);
+  --border: theme(colors.slate.200);
+  --card: theme(colors.white);
+  --success: theme(colors.emerald.500);
+  --warning: theme(colors.amber.500);
+  --error: theme(colors.red.500);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-secondary-light: var(--secondary-light);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --font-sans: var(--font-poppins);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  @apply h-full w-full;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Mobile-first responsive design */
+* {
+  box-sizing: border-box;
+}
+
+/* Better scrolling on mobile */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Safe area handling for notched devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}

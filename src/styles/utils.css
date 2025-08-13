@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+.size-full {
+  @apply h-full w-full;
+}
+
+.center-row {
+  @apply flex flex-row items-center;
+}
+
+.center-col {
+  @apply flex flex-col items-center;
+}
+
+.center-all {
+  @apply flex flex-col items-center justify-center;
+}
+
+.width-content {
+  @apply mx-auto w-full max-w-(--breakpoint-xl) px-4;
+}
+
+.page-title {
+  @apply text-3xl font-light tracking-wide;
+}
+
+.col {
+  @apply flex flex-col;
+}

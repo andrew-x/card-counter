@@ -1,0 +1,11 @@
+# Project Overview
+
+Card Counter is a small web app designed to help with card games that assign a point value to different cards. By taking a picture of a group of cards, it counts up the assigned values and adds them to a table.
+
+## Tech Stack
+
+- Next.js for the web framework.
+- Tailwind for styling
+- Mantine for UI components
+- Next-Safe-Actions for type safe server actions
+- AI SDK v5 for LLM interactions

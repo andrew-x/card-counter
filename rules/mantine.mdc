@@ -1,0 +1,7 @@
+---
+description: When using Mantine
+alwaysApply: false
+---
+
+Do not use Mantine components for layout or text. Use divs, p, headings, etc. instead of Mantine components.
+Only use Mantine components for interactive elements like buttons, textfields, etc.
