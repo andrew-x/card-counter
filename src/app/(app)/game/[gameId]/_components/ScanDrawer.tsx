@@ -28,6 +28,7 @@ export default function ScanDrawer({
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [scanResult, setScanResult] = useState<ScanResult | null>(null)
   const [isScanning, setIsScanning] = useState(false)
+  const [permissionDenied, setPermissionDenied] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -37,32 +38,63 @@ export default function ScanDrawer({
     if (opened) {
       startCamera()
     } else {
-      cleanup()
+      // Stop the camera when drawer closes
+      cleanup(true)
     }
   }, [opened])
 
+  // Cleanup stream on component unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current
+          .getTracks()
+          .forEach((track: MediaStreamTrack) => track.stop())
+      }
+    }
+  }, [])
+
   const startCamera = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' },
-    })
-    streamRef.current = stream
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream
+    try {
+      // Check if we already have permission
+      const permission = await navigator.permissions.query({
+        name: 'camera' as PermissionName,
+      })
+
+      if (permission.state === 'denied') {
+        setPermissionDenied(true)
+        return
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      })
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
+      setPermissionDenied(false)
+    } catch {
+      setPermissionDenied(true)
     }
   }
 
-  const cleanup = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop())
+  const cleanup = (stopStream = false) => {
+    if (stopStream && streamRef.current) {
+      streamRef.current
+        .getTracks()
+        .forEach((track: MediaStreamTrack) => track.stop())
       streamRef.current = null
     }
     setCapturedImage(null)
     setScanResult(null)
     setIsScanning(false)
+    setPermissionDenied(false)
   }
 
   const handleClose = () => {
-    cleanup()
+    // Stop the camera when closing
+    cleanup(true)
     onClose()
   }
 
@@ -80,11 +112,7 @@ export default function ScanDrawer({
         const imageData = canvas.toDataURL('image/jpeg', 0.8)
         setCapturedImage(imageData)
 
-        // Stop the camera stream after capturing
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop())
-          streamRef.current = null
-        }
+        // Keep the camera stream active for potential reuse
 
         // Immediately start scanning
         setIsScanning(true)
@@ -135,7 +163,31 @@ export default function ScanDrawer({
       }}
     >
       <div className="space-y-4">
-        {!capturedImage ? (
+        {permissionDenied ? (
+          <div className="space-y-4">
+            <div className="bg-yellow-50 rounded-lg p-4">
+              <h4 className="font-medium text-yellow-900 mb-2">
+                Camera Permission Required
+              </h4>
+              <p className="text-sm text-yellow-700 mb-3">
+                This app needs camera access to scan cards. Please allow camera
+                access and try again.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  onClick={startCamera}
+                  variant="filled"
+                  className="flex-1"
+                >
+                  Try Again
+                </Button>
+                <Button variant="subtle" onClick={handleClose}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : !capturedImage ? (
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
               Position your cards in the camera view and tap to scan
