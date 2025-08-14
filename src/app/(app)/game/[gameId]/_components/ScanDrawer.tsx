@@ -3,8 +3,9 @@
 
 import { scanCards } from '@/actions/scan'
 import { Button, Drawer } from '@mantine/core'
-import { CameraIcon } from '@phosphor-icons/react'
-import { useEffect, useRef, useState } from 'react'
+import { CameraIcon, UploadIcon } from '@phosphor-icons/react'
+import { useRef, useState } from 'react'
+import ScanResults from './ScanResults'
 
 type ScanDrawerProps = {
   opened: boolean
@@ -16,7 +17,6 @@ type ScanDrawerProps = {
 type ScanResult = {
   recognizedCards: string[]
   totalScore: number
-  confidence: number
 }
 
 export default function ScanDrawer({
@@ -25,118 +25,66 @@ export default function ScanDrawer({
   valueMap,
   onConfirm,
 }: ScanDrawerProps) {
-  const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [scanResult, setScanResult] = useState<ScanResult | null>(null)
   const [isScanning, setIsScanning] = useState(false)
-  const [permissionDenied, setPermissionDenied] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
+  const [currentScore, setCurrentScore] = useState(0)
 
-  // Start camera when drawer opens
-  useEffect(() => {
-    if (opened) {
-      startCamera()
-    } else {
-      // Stop the camera when drawer closes
-      cleanup(true)
-    }
-  }, [opened])
-
-  // Cleanup stream on component unmount
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current
-          .getTracks()
-          .forEach((track: MediaStreamTrack) => track.stop())
-      }
-    }
-  }, [])
-
-  const startCamera = async () => {
-    try {
-      // Check if we already have permission
-      const permission = await navigator.permissions.query({
-        name: 'camera' as PermissionName,
-      })
-
-      if (permission.state === 'denied') {
-        setPermissionDenied(true)
-        return
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-      })
-      streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-      }
-      setPermissionDenied(false)
-    } catch {
-      setPermissionDenied(true)
-    }
-  }
-
-  const cleanup = (stopStream = false) => {
-    if (stopStream && streamRef.current) {
-      streamRef.current
-        .getTracks()
-        .forEach((track: MediaStreamTrack) => track.stop())
-      streamRef.current = null
-    }
-    setCapturedImage(null)
+  const cleanup = () => {
+    setPreviewImage(null)
     setScanResult(null)
     setIsScanning(false)
-    setPermissionDenied(false)
+    setCurrentScore(0)
   }
 
   const handleClose = () => {
-    // Stop the camera when closing
-    cleanup(true)
+    cleanup()
     onClose()
   }
 
-  const captureAndScan = async () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current
-      const video = videoRef.current
-      const context = canvas.getContext('2d')
+  const handleUploadClick = () => {
+    fileInputRef.current?.click()
+  }
 
-      if (context) {
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
-        context.drawImage(video, 0, 0)
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
 
-        const imageData = canvas.toDataURL('image/jpeg', 0.8)
-        setCapturedImage(imageData)
+    // Create preview image
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result as string
+      setPreviewImage(result)
+    }
+    reader.readAsDataURL(file)
+  }
 
-        // Keep the camera stream active for potential reuse
+  const scanSelectedImage = async () => {
+    if (!previewImage) return
 
-        // Immediately start scanning
-        setIsScanning(true)
-        try {
-          const result = await scanCards({
-            image: imageData,
-            valueMap: valueMap,
-          })
+    setIsScanning(true)
+    try {
+      const result = await scanCards({
+        image: previewImage,
+        valueMap: valueMap,
+      })
 
-          if (result?.data) {
-            setScanResult(result.data)
-          }
-        } finally {
-          setIsScanning(false)
-        }
+      if (result?.data) {
+        setScanResult(result.data)
       }
+    } finally {
+      setIsScanning(false)
     }
   }
 
+  const handleScoreChange = (newScore: number) => {
+    setCurrentScore(newScore)
+  }
+
   const confirmScanResult = () => {
-    if (scanResult) {
-      onConfirm(scanResult.totalScore)
-      handleClose()
-    }
+    onConfirm(currentScore)
+    handleClose()
   }
 
   return (
@@ -163,73 +111,71 @@ export default function ScanDrawer({
       }}
     >
       <div className="space-y-4">
-        {permissionDenied ? (
+        {!previewImage ? (
           <div className="space-y-4">
-            <div className="bg-yellow-50 rounded-lg p-4">
-              <h4 className="font-medium text-yellow-900 mb-2">
-                Camera Permission Required
-              </h4>
-              <p className="text-sm text-yellow-700 mb-3">
-                This app needs camera access to scan cards. Please allow camera
-                access and try again.
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  onClick={startCamera}
-                  variant="filled"
-                  className="flex-1"
-                >
-                  Try Again
-                </Button>
-                <Button variant="subtle" onClick={handleClose}>
-                  Cancel
-                </Button>
+            <p className="text-sm text-gray-600 text-center">
+              Select or take a photo of your cards to scan
+            </p>
+            <div
+              onClick={handleUploadClick}
+              className="relative border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors duration-200 group"
+            >
+              <div className="flex flex-col items-center space-y-3">
+                <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors duration-200">
+                  <CameraIcon size={32} className="text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-lg font-medium text-gray-900 mb-1">
+                    Take Photo or Upload Image
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Tap to open camera or select from gallery
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ) : !capturedImage ? (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Position your cards in the camera view and tap to scan
-            </p>
-            <div className="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={captureAndScan}
-                className="flex-1"
-                leftSection={<CameraIcon size={16} />}
-                loading={isScanning}
-              >
-                {isScanning ? 'Scanning...' : 'Scan Cards'}
-              </Button>
-              <Button variant="subtle" onClick={handleClose}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <div className="flex justify-center">
+              <Button variant="subtle" onClick={handleClose} className="">
                 Cancel
               </Button>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
-            {isScanning ? (
-              <>
-                <div className="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
+            {!scanResult && (
+              <div className="flex justify-center">
+                <div className="relative bg-black rounded-lg overflow-hidden aspect-[4/3] w-full max-w-sm max-h-64">
                   <img
-                    src={capturedImage}
-                    alt="Captured cards"
+                    src={previewImage}
+                    alt="Selected cards"
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="text-center py-4">
-                  <div className="text-gray-600">Analyzing cards...</div>
-                </div>
-              </>
-            ) : scanResult ? (
+              </div>
+            )}
+
+            {!scanResult ? (
+              <div className="flex justify-center gap-2">
+                <Button
+                  onClick={scanSelectedImage}
+                  leftSection={<UploadIcon size={16} />}
+                  loading={isScanning}
+                >
+                  {isScanning ? 'Analyzing...' : 'Scan Cards'}
+                </Button>
+                <Button variant="subtle" onClick={handleClose}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
               <div className="space-y-4">
                 {scanResult.recognizedCards.length === 0 ? (
                   <div className="bg-red-50 rounded-lg p-4">
@@ -248,58 +194,29 @@ export default function ScanDrawer({
                     <div className="flex gap-2">
                       <Button
                         variant="subtle"
-                        onClick={handleClose}
+                        onClick={() => {
+                          setScanResult(null)
+                          setPreviewImage(null)
+                        }}
                         className="flex-1"
                       >
+                        Try Another Image
+                      </Button>
+                      <Button variant="subtle" onClick={handleClose}>
                         Cancel
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 mb-2">
-                        Scan Results
-                      </h4>
-                      <div className="space-y-2">
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            Recognized Cards:
-                          </span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {scanResult.recognizedCards.map((card, index) => (
-                              <span
-                                key={index}
-                                className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
-                              >
-                                {card}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            Total Score:
-                          </span>
-                          <span className="ml-2 font-semibold text-lg text-gray-900">
-                            {scanResult.totalScore}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">
-                            Confidence:
-                          </span>
-                          <span className="ml-2 text-sm text-gray-700">
-                            {Math.round(scanResult.confidence * 100)}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    <ScanResults
+                      initialCards={scanResult.recognizedCards}
+                      valueMap={valueMap}
+                      onScoreChange={handleScoreChange}
+                    />
 
-                    <div className="flex gap-2">
-                      <Button onClick={confirmScanResult} className="flex-1">
-                        Confirm Score
-                      </Button>
+                    <div className="flex justify-center gap-2">
+                      <Button onClick={confirmScanResult}>Confirm Score</Button>
                       <Button variant="subtle" onClick={handleClose}>
                         Cancel
                       </Button>
@@ -307,17 +224,9 @@ export default function ScanDrawer({
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="text-center py-4">
-                <Button variant="subtle" onClick={handleClose}>
-                  Cancel
-                </Button>
-              </div>
             )}
           </div>
         )}
-
-        <canvas ref={canvasRef} className="hidden" />
       </div>
     </Drawer>
   )

@@ -22,10 +22,24 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Card Counter',
   description: 'Count card values quickly and easily',
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'Card Counter',
+    startupImage: '/icons/icon-512x512.png',
+  },
+  icons: {
+    apple: '/icons/icon-192x192.png',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'Card Counter',
+    'application-name': 'Card Counter',
+    'msapplication-TileColor': '#3b82f6',
+    'msapplication-TileImage': '/icons/icon-144x144.png',
   },
 }
 

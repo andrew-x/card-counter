@@ -291,25 +291,25 @@ export default function RoundsSection({ game, gameId }: RoundsSectionProps) {
                                       Scan
                                     </Button>
                                     <div className="w-20">
-                                      <NumberInput
-                                        value={currentScore}
-                                        onChange={(value) =>
-                                          handleScoreChange(
-                                            round.id,
-                                            player.id,
-                                            value
-                                          )
-                                        }
-                                        size="sm"
-                                        min={0}
-                                        hideControls
-                                        className="text-right"
-                                        styles={{
-                                          input: {
-                                            textAlign: 'right',
-                                            fontWeight: 600,
-                                          },
+                                      <input
+                                        type="text"
+                                        value={currentScore || ''}
+                                        onChange={(e) => {
+                                          const value = e.target.value
+                                          // Only allow numbers and empty string
+                                          if (
+                                            value === '' ||
+                                            /^\d+$/.test(value)
+                                          ) {
+                                            handleScoreChange(
+                                              round.id,
+                                              player.id,
+                                              value
+                                            )
+                                          }
                                         }}
+                                        className="w-full px-2 py-1 text-right font-semibold text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                        placeholder="0"
                                       />
                                     </div>
                                   </div>
