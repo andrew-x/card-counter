@@ -17,7 +17,7 @@ export const scanCards = publicActionClient
   .schema(scanCardSchema)
   .action(async ({ parsedInput: { image, valueMap } }) => {
     const result = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: google('gemini-2.5-flash-lite'),
       messages: [
         {
           role: 'system',

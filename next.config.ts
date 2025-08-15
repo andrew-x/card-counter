@@ -20,7 +20,9 @@ const withPWA = require('next-pwa')({
 })
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverActions: {
+    bodySizeLimit: '10mb',
+  },
 }
 
 export default withPWA(nextConfig)
