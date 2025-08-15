@@ -2,6 +2,7 @@
 'use client'
 
 import { scanCards } from '@/actions/scan'
+import logger from '@/lib/logger'
 import { Button, Drawer } from '@mantine/core'
 import { CameraIcon, UploadIcon } from '@phosphor-icons/react'
 import { useRef, useState } from 'react'
@@ -47,17 +48,84 @@ export default function ScanDrawer({
     fileInputRef.current?.click()
   }
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (
+    file: File,
+    maxSizeKB: number = 1024
+  ): Promise<string> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
+      const img = new Image()
+
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        const maxWidth = 1024
+        const maxHeight = 1024
+        let { width, height } = img
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width
+            width = maxWidth
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height
+            height = maxHeight
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // Start with high quality and reduce if needed
+        let quality = 0.9
+        let compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+
+        // Reduce quality until under size limit
+        while (
+          (compressedDataUrl.length * 0.75) / 1024 > maxSizeKB &&
+          quality > 0.1
+        ) {
+          quality -= 0.1
+          compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+        }
+
+        resolve(compressedDataUrl)
+      }
+
+      // Load the original file
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        img.src = e.target?.result as string
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0]
     if (!file) return
 
-    // Create preview image
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      setPreviewImage(result)
+    try {
+      // Compress image to under 1MB
+      const compressedImage = await compressImage(file, 1024)
+      setPreviewImage(compressedImage)
+    } catch (error) {
+      logger.error('Error compressing image:', error)
+      // Fallback to original file if compression fails
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setPreviewImage(result)
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   const scanSelectedImage = async () => {
