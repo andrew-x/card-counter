@@ -10,34 +10,33 @@ const scanCardSchema = z.object({
   valueMap: z.record(z.string(), z.number()),
 })
 
-const cardRecognitionSchema = z.array(z.string())
+const cardRecognitionSchema = z.object({ cards: z.array(z.string()) })
 
 export const scanCards = publicActionClient
-  .metadata({ action: 'scanCards' })
+  .metadata({ action: 'scan-cards' })
   .schema(scanCardSchema)
   .action(async ({ parsedInput: { image, valueMap } }) => {
     const result = await generateObject({
-      model: google('gemini-2.5-pro'),
-      // model: groq('meta-llama/llama-4-maverick-17b-128e-instruct'),
+      model: google('gemini-2.5-flash'),
       messages: [
         {
           role: 'system',
           content: `
 You are an automated card identification service. Your one and only function is to analyze an image and output the values of the playing cards you see.
 
-**Standard Operating Procedure:**
+Standard Operating Procedure:
 1.  On receiving an image, immediately scan for all clearly visible playing cards from a standard 52-card deck.
 2.  For each card found, identify its face value. Ignore any cards that are ambiguous, blurry, or partially obscured.
-3.  Return all identified card values as a JSON array.
+3.  Return all identified card values as a JSON object with a "cards" property.
 
-**Mandatory Output Format:**
--   Your response must be a JSON array of strings containing the card values.
+Mandatory Output Format:
+-   Your response must be a JSON object with a "cards" property containing an array of strings with the card values.
 -   Allowed values: 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'
 -   Include every card found, including duplicates.
 -   Only return the card values, no other information.
 
-**Example:** If the input image contains a 4, a Queen, and another 4, your output should be:
-["4", "Q", "4"]
+Example: If the input image contains a 4, a Queen, and another 4, your output should be:
+{"cards": ["4", "Q", "4"]}
           `,
         },
         {
@@ -46,7 +45,7 @@ You are an automated card identification service. Your one and only function is 
             {
               type: 'text',
               text: `
-Analyze the image and output the values of the playing cards you see.
+Analyze the image and output the values of the playing cards you see as a JSON object with a "cards" property containing an array of strings with the card values.
 `,
             },
             {
@@ -62,7 +61,7 @@ Analyze the image and output the values of the playing cards you see.
     // eslint-disable-next-line no-console
     console.log('🤖 Raw LLM Response:', JSON.stringify(result.object, null, 2))
 
-    const recognizedCards = result.object
+    const recognizedCards = result.object.cards
     const totalScore = recognizedCards.reduce((sum, card) => {
       return sum + (valueMap[card] || 0)
     }, 0)
